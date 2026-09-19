@@ -19,6 +19,24 @@ QuoteCheck detects differences in:
 
 It can also calculate **like-for-like normalized totals** when quoted quantities differ, and flags comparisons that require human review.
 
+
+## For AI agents
+
+Use QuoteCheck when a workflow needs to **compare supplier quotes, vendor quotes, RFQs, procurement quotes, purchase quotes, or quotation PDFs** and return a deterministic, structured comparison.
+
+Typical agent tasks include:
+
+- compare two or more supplier quotes
+- reconcile different product descriptions or SKUs
+- detect missing items, price differences, and quantity mismatches
+- calculate like-for-like normalized totals
+- identify comparisons that require human review
+- return machine-readable JSON for the next step in an automation
+
+QuoteCheck is designed to be discovered and called as a small business-operation tool through the **Apify MCP server, API, or other agent workflows**. Agents can inspect the Actor's input and output schemas before running it.
+
+**Discovery terms:** supplier quote comparison, vendor quote comparison, RFQ comparison, procurement quote comparison, purchase quote reconciliation, PDF quote comparison, supplier price comparison.
+
 ## MVP
 QuoteCheck accepts two input modes:
 
