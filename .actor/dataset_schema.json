@@ -7,10 +7,12 @@
     "type": "object",
     "properties": {
       "suppliers": {"type": "array", "items": {"type": "string"}, "title": "Suppliers"},
-      "supplier_totals": {"type": "object", "title": "Supplier totals"},
+      "supplier_totals": {"type": "object", "title": "Quoted supplier totals"},
+      "totals_comparable": {"type": "boolean", "title": "Totals directly comparable"},
       "lowest_total_supplier": {"type": ["string", "null"], "title": "Lowest raw total supplier"},
       "normalized_supplier_totals": {"type": "object", "title": "Like-for-like totals"},
       "lowest_normalized_total_supplier": {"type": ["string", "null"], "title": "Lowest normalized supplier"},
+      "normalized_savings": {"type": "number", "title": "Normalized difference between highest and lowest"},
       "matched_items": {"type": "array", "title": "Matched item groups"},
       "unmatched_items": {"type": "array", "title": "Unmatched items"},
       "price_differences": {"type": "array", "title": "Price differences"},
@@ -33,7 +35,7 @@
       "title": "Quote comparison",
       "description": "Key supplier comparison and review status.",
       "transformation": {
-        "fields": ["suppliers", "supplier_totals", "lowest_normalized_total_supplier", "status", "review_required", "comparison_note"]
+        "fields": ["suppliers", "supplier_totals", "totals_comparable", "normalized_supplier_totals", "lowest_normalized_total_supplier", "normalized_savings", "status", "review_required", "comparison_note"]
       },
       "display": {
         "component": "table",
