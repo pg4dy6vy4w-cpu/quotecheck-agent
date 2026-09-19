@@ -4,18 +4,20 @@
   "type": "object",
   "schemaVersion": 1,
   "properties": {
-    "quote_pdfs": {
-      "title": "Supplier quote PDFs",
+    "quote_stores": {
+      "title": "Supplier quote file stores",
       "type": "array",
-      "description": "Upload at least two text-based supplier quote PDFs. Scanned PDFs requiring OCR are not supported in this MVP.",
-      "editor": "fileupload",
-      "maxItems": 10,
-      "minItems": 2
+      "description": "Select one or more Apify Key-Value Stores containing text-based supplier quote PDFs. QuoteCheck reads PDF records from the selected stores. Scanned PDFs requiring OCR are not supported in this MVP.",
+      "editor": "resourcePicker",
+      "resourceType": "keyValueStore",
+      "resourcePermissions": ["READ"],
+      "minItems": 1,
+      "maxItems": 10
     },
     "quotes": {
       "title": "Structured supplier quotes",
       "type": "array",
-      "description": "Optional JSON input for API and agent workflows. Use this instead of quote PDFs.",
+      "description": "Optional JSON input for API and agent workflows. Use this instead of quote storage.",
       "editor": "json"
     }
   }
