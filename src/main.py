@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 import re
 from difflib import SequenceMatcher
 from decimal import Decimal, InvalidOperation
@@ -21,26 +22,35 @@ def norm_text(value):
 
 
 def money(value):
-    if value is None or value == "":
+    if value is None or value == "" or isinstance(value, bool):
         return None
     try:
-        cleaned = (
-            str(value)
-            .replace(",", "")
-            .replace("£", "")
-            .replace("$", "")
-            .replace("€", "")
-            .strip()
-        )
-        return float(Decimal(cleaned))
-    except (InvalidOperation, ValueError, TypeError):
+        cleaned = re.sub(r"[£$€\s]", "", str(value))
+        if "," in cleaned and "." in cleaned:
+            if cleaned.rfind(",") > cleaned.rfind("."):
+                cleaned = cleaned.replace(".", "").replace(",", ".")
+            else:
+                cleaned = cleaned.replace(",", "")
+        elif "," in cleaned:
+            if re.fullmatch(r"-?\d+,\d{1,2}", cleaned):
+                cleaned = cleaned.replace(",", ".")
+            elif re.fullmatch(r"-?\d{1,3}(?:,\d{3})+", cleaned):
+                cleaned = cleaned.replace(",", "")
+            else:
+                return None
+        result = float(Decimal(cleaned))
+        return result if math.isfinite(result) else None
+    except (InvalidOperation, ValueError, TypeError, OverflowError):
         return None
 
 
 def number(value):
+    if isinstance(value, bool):
+        return None
     try:
-        return float(value)
-    except (TypeError, ValueError):
+        result = float(value)
+        return result if math.isfinite(result) else None
+    except (TypeError, ValueError, OverflowError):
         return None
 
 
@@ -221,65 +231,39 @@ def match_items(quotes, threshold=0.72):
             if score >= threshold:
                 candidates.append((score, left_index, right_index))
 
-    # Highest-confidence pairs claim their items first.
+    # Merge only complete-link compatible groups with distinct suppliers.
     candidates.sort(key=lambda x: (-x[0], x[1], x[2]))
-    matched_entry_ids = set()
-    pair_groups = []
-
-    for score, left_index, right_index in candidates:
-        if left_index in matched_entry_ids or right_index in matched_entry_ids:
+    groups = {i: [i] for i in range(len(entries))}
+    owners = list(range(len(entries)))
+    for _, left, right in candidates:
+        a, b = owners[left], owners[right]
+        if a == b:
             continue
-        left = entries[left_index]
-        right = entries[right_index]
-        matched_entry_ids.update({left_index, right_index})
-        pair_groups.append({
-            "entries": [left, right],
-            "canonical_key": left["key"] if len(left["key"]) >= len(right["key"]) else right["key"],
-            "canonical_label": (
-                left["item"].get("description")
-                or left["item"].get("name")
-                or right["item"].get("description")
-                or right["item"].get("name")
-            ),
+        combined = groups[a] + groups[b]
+        if len({entries[i]["supplier"] for i in combined}) != len(combined):
+            continue
+        if not all(
+            similarity(entries[i]["key"], entries[j]["key"],
+                       entries[i]["item"], entries[j]["item"]) >= threshold
+            and items_compatible(entries[j]["item"], entries[i]["item"])
+            for i in groups[a] for j in groups[b]
+        ):
+            continue
+        groups[a] = combined
+        for i in groups.pop(b):
+            owners[i] = a
+    result = []
+    for ids in groups.values():
+        members = [entries[i] for i in ids]
+        representative = max(members, key=lambda e: len(e["key"]))
+        result.append({
+            "entries": members,
+            "canonical_key": representative["key"],
+            "canonical_label": representative["item"].get("description")
+                or representative["item"].get("name") or representative["key"],
         })
+    return result
 
-    # Add unmatched entries as singleton groups. For >2 suppliers, attach a
-    # third item only if it is compatible with an existing group and comes from
-    # a supplier not already represented in that group.
-    singleton_entries = [
-        entry for index, entry in enumerate(entries)
-        if index not in matched_entry_ids
-    ]
-
-    for entry in singleton_entries:
-        best_group = None
-        best_score = 0.0
-        for group in pair_groups:
-            if any(e["supplier"] == entry["supplier"] for e in group["entries"]):
-                continue
-            scores = [
-                similarity(entry["key"], existing["key"], entry["item"], existing["item"])
-                for existing in group["entries"]
-            ]
-            score = max(scores) if scores else 0.0
-            if score > best_score:
-                best_score = score
-                best_group = group
-        if best_group is not None and best_score >= threshold:
-            best_group["entries"].append(entry)
-            matched_entry_ids.add(entries.index(entry))
-        else:
-            pair_groups.append({
-                "entries": [entry],
-                "canonical_key": entry["key"],
-                "canonical_label": (
-                    entry["item"].get("description")
-                    or entry["item"].get("name")
-                    or entry["key"]
-                ),
-            })
-
-    return pair_groups
 
 def analyse_group(group, supplier_names):
     entries = group["entries"]
@@ -315,7 +299,7 @@ def analyse_group(group, supplier_names):
             "values": {s: x["quantity"] for s, x in by_supplier.items() if x["quantity"] is not None},
         })
 
-    if len(units) > 1:
+    if len(set(units)) > 1:
         warnings.append({
             "type": "price_difference",
             "values": {s: x["unit_price"] for s, x in by_supplier.items() if x["unit_price"] is not None},
@@ -404,7 +388,9 @@ def compare_quotes(quotes):
     # same quantity across suppliers and no item is missing from a supplier.
     quantities_differ = bool(quantity_differences)
     directly_comparable = (
-        not missing
+        bool(groups)
+        and all(not analyse_group(g, suppliers)["missing_suppliers"] for g in groups)
+        and not missing
         and not quantities_differ
         and len(comparable_totals) == len(suppliers)
     )
@@ -590,6 +576,72 @@ def compare_quotes(quotes):
             "message": "One or more item matches have confidence below 0.75 and should be reviewed.",
             "items": [item["canonical_item"] for item in low_confidence],
         })
+
+    # Never present a winner when numeric data or currency is unsafe.
+    validation = []
+    currencies = []
+    for index, quote in enumerate(quotes):
+        supplier = suppliers[index]
+        codes = set(str(quote.get("currency") or "").upper().split())
+        fields = [quote.get("total")]
+        calculated = 0.0
+        complete = True
+        for item in quote.get("items") or []:
+            if not isinstance(item, dict):
+                validation.append({"type": "invalid_item", "supplier": supplier})
+                complete = False
+                continue
+            qty = number(item.get("quantity", 1))
+            raw_unit = item.get("unit_price", item.get("unitPrice", item.get("price")))
+            raw_line = item.get("total", item.get("line_total", item.get("lineTotal")))
+            unit, line = money(raw_unit), money(raw_line)
+            fields.extend([raw_unit, raw_line])
+            if qty is None or qty <= 0 or unit is None or unit < 0:
+                validation.append({"type": "invalid_quantity_or_price", "supplier": supplier})
+                complete = False
+            if raw_line is not None and (line is None or line < 0):
+                validation.append({"type": "invalid_line_total", "supplier": supplier})
+                complete = False
+            if qty is not None and unit is not None:
+                expected = round(qty * unit, 2)
+                if not math.isfinite(expected):
+                    complete = False
+                    validation.append({"type": "numeric_overflow", "supplier": supplier})
+                elif line is not None and abs(line - expected) > 0.011:
+                    validation.append({"type": "line_total_mismatch", "supplier": supplier})
+                calculated += expected
+        declared = money(quote.get("total"))
+        if quote.get("total") is not None and declared is None:
+            validation.append({"type": "invalid_quote_total", "supplier": supplier})
+        if complete and declared is not None and abs(declared - calculated) > 0.011:
+            validation.append({"type": "quote_total_requires_reconciliation", "supplier": supplier})
+        for value in fields:
+            for symbol, code in (("£", "GBP"), ("€", "EUR"), ("$", "DOLLAR_UNSPECIFIED")):
+                if symbol in str(value or ""):
+                    codes.add(code)
+        if codes & {"USD", "CAD", "AUD", "NZD", "SGD", "HKD"}:
+            codes.discard("DOLLAR_UNSPECIFIED")
+        currencies.append(codes)
+    if any(currencies) and (any(len(c) != 1 for c in currencies)
+                            or len(set().union(*currencies)) != 1):
+        validation.append({"type": "currency_mismatch_or_unknown"})
+    elif not any(currencies):
+        # Preserve legacy numeric-only input, but disclose its currency assumption.
+        result["currency_assumption"] = "All prices must use the same currency; none was supplied."
+    if len(set(suppliers)) != len(suppliers):
+        validation.append({"type": "duplicate_supplier_names"})
+    if any(item["missing_suppliers"] for item in matched):
+        validation.append({"type": "incomplete_supplier_coverage"})
+    if low_confidence:
+        validation.append({"type": "low_match_confidence"})
+    if validation:
+        result["warnings"].extend(validation)
+        result["totals_comparable"] = False
+        result["lowest_total_supplier"] = None
+        for key in ("normalized_supplier_totals", "lowest_normalized_total_supplier", "normalized_savings"):
+            result.pop(key, None)
+        result["comparison_note"] = "Comparison requires review; resolve the reported warnings before selecting a supplier."
+        decision_flags.append({"type": "validation_failed", "severity": "high", "issues": validation})
 
     result["decision_flags"] = decision_flags
 
@@ -893,6 +945,7 @@ def parse_pdf_quote(text, source, index, page_texts=None):
 
     return {
         "supplier": supplier,
+        "currency": " ".join(sorted(set(re.findall(r"\b(?:GBP|USD|EUR|CAD|AUD)\b", text.upper())) | {code for symbol, code in (("£", "GBP"), ("€", "EUR"), ("$", "DOLLAR_UNSPECIFIED")) if symbol in text})),
         "items": items,
         "total": quote_total,
         "commercial_terms": {
@@ -1070,10 +1123,11 @@ async def main():
             if quote.get("_evidence")
         }
 
+        serialized = json.dumps(result, indent=2, allow_nan=False)
         await Actor.push_data(result)
         await Actor.set_value(
             "OUTPUT",
-            json.dumps(result, indent=2),
+            serialized,
             content_type="application/json",
         )
         Actor.log.info(
