@@ -1,0 +1,11 @@
+{
+  "actorSpecification": 1,
+  "name": "quotecheck-mvp",
+  "title": "QuoteCheck MVP",
+  "version": "1.0",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json"
+  },
+  "output": "./output_schema.json"
+}
