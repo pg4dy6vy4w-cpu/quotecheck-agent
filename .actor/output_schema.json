@@ -1,0 +1,13 @@
+{
+  "actorOutputSchemaVersion": 1,
+  "title": "QuoteCheck output",
+  "description": "Structured supplier quote comparison results for AI agents and automated procurement workflows.",
+  "properties": {
+    "results": {
+      "type": "string",
+      "title": "Quote comparison results",
+      "description": "One completed quote comparison with supplier totals, matched and missing items, quantity and price differences, commercial-term differences, review flags, and source evidence.",
+      "template": "{{links.apiDefaultDatasetUrl}}/items"
+    }
+  }
+}
