@@ -522,6 +522,7 @@ def compare_quotes(quotes):
     result = {
         "suppliers": suppliers,
         "supplier_totals": comparable_totals,
+        "totals_comparable": directly_comparable,
         "lowest_total_supplier": lowest,
         "matched_items": matched,
         "unmatched_items": missing,
@@ -539,6 +540,9 @@ def compare_quotes(quotes):
     if normalized_totals:
         result["normalized_supplier_totals"] = normalized_totals
         result["lowest_normalized_total_supplier"] = lowest_normalized
+        result["normalized_savings"] = round(
+            max(normalized_totals.values()) - min(normalized_totals.values()), 2
+        ) if len(normalized_totals) > 1 else 0.0
 
     # Compact, deterministic flags make the output easier for an AI agent to
     # consume without having to infer issues from the detailed arrays.
