@@ -1,0 +1,48 @@
+{
+  "actorSpecification": 1,
+  "title": "QuoteCheck Results",
+  "description": "Machine-readable supplier quote comparison results.",
+  "fields": {
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+      "suppliers": {"type": "array", "items": {"type": "string"}, "title": "Suppliers"},
+      "supplier_totals": {"type": "object", "title": "Supplier totals"},
+      "lowest_total_supplier": {"type": ["string", "null"], "title": "Lowest raw total supplier"},
+      "normalized_supplier_totals": {"type": "object", "title": "Like-for-like totals"},
+      "lowest_normalized_total_supplier": {"type": ["string", "null"], "title": "Lowest normalized supplier"},
+      "matched_items": {"type": "array", "title": "Matched item groups"},
+      "unmatched_items": {"type": "array", "title": "Unmatched items"},
+      "price_differences": {"type": "array", "title": "Price differences"},
+      "quantity_differences": {"type": "array", "title": "Quantity differences"},
+      "commercial_terms_differences": {"type": "array", "title": "Commercial-term differences"},
+      "warnings": {"type": "array", "title": "Warnings"},
+      "decision_flags": {"type": "array", "title": "Decision flags"},
+      "status": {"type": "string", "title": "Status"},
+      "review_required": {"type": "boolean", "title": "Review required"},
+      "input_summary": {"type": "object", "title": "Input summary"},
+      "extraction": {"type": "object", "title": "Extraction summary"},
+      "commercial_terms": {"type": "object", "title": "Commercial terms"},
+      "evidence": {"type": "object", "title": "Source evidence"},
+      "comparison_note": {"type": "string", "title": "Comparison note"}
+    },
+    "required": ["suppliers", "supplier_totals", "status", "review_required"]
+  },
+  "views": {
+    "overview": {
+      "title": "Quote comparison",
+      "description": "Key supplier comparison and review status.",
+      "transformation": {
+        "fields": ["suppliers", "supplier_totals", "lowest_normalized_total_supplier", "status", "review_required", "comparison_note"]
+      },
+      "display": {
+        "component": "table",
+        "properties": {
+          "status": {"label": "Status", "format": "text"},
+          "review_required": {"label": "Review required", "format": "boolean"},
+          "comparison_note": {"label": "Comparison note", "format": "text"}
+        }
+      }
+    }
+  }
+}
