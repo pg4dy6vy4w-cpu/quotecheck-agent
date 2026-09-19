@@ -1,0 +1,22 @@
+{
+  "title": "QuoteCheck Input",
+  "description": "Compare supplier quotes from PDFs or structured JSON and return machine-readable price, quantity, and exception data.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "quote_pdfs": {
+      "title": "Supplier quote PDFs",
+      "type": "array",
+      "description": "Upload at least two text-based supplier quote PDFs. Scanned PDFs requiring OCR are not supported in this MVP.",
+      "editor": "fileupload",
+      "maxItems": 10,
+      "minItems": 2
+    },
+    "quotes": {
+      "title": "Structured supplier quotes",
+      "type": "array",
+      "description": "Optional JSON input for API and agent workflows. Use this instead of quote PDFs.",
+      "editor": "json"
+    }
+  }
+}
