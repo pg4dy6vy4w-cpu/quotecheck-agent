@@ -935,19 +935,99 @@ async def parse_pdf_sources(sources):
     return quotes, extraction
 
 
+async def parse_pdf_kvs_sources(store_ids):
+    quotes = []
+    extraction = []
+    pdf_records = []
+
+    for store_id in store_ids:
+        if not isinstance(store_id, str) or not store_id.strip():
+            continue
+
+        store = Actor.apify_client.key_value_store(store_id)
+        keys = await store.iterate_keys(limit=1000)
+
+        for metadata in keys:
+            key = getattr(metadata, "key", None)
+            content_type = getattr(metadata, "content_type", None)
+            if isinstance(metadata, dict):
+                key = metadata.get("key", key)
+                content_type = metadata.get("contentType", metadata.get("content_type", content_type))
+
+            if not key:
+                continue
+
+            key_text = str(key)
+            if not (
+                key_text.lower().endswith(".pdf")
+                or str(content_type or "").lower().split(";")[0] == "application/pdf"
+            ):
+                continue
+
+            pdf_records.append((store_id, key_text))
+
+    if len(pdf_records) < 2:
+        raise ValueError(
+            "Selected quote storage must contain at least two PDF records. "
+            "Select the Key-Value Stores containing your supplier quote PDFs."
+        )
+
+    for index, (store_id, key) in enumerate(pdf_records):
+        Actor.log.info(
+            f"Extracting quote PDF {index + 1}/{len(pdf_records)} from {store_id}/{key}"
+        )
+        record = await Actor.apify_client.key_value_store(store_id).get_record_as_bytes(key)
+        if record is None:
+            raise ValueError(f"Could not read PDF record: {store_id}/{key}")
+
+        if isinstance(record, bytearray):
+            record = bytes(record)
+        elif isinstance(record, dict) and isinstance(record.get("value"), (bytes, bytearray)):
+            record = bytes(record["value"])
+
+        if not isinstance(record, bytes):
+            raise ValueError(
+                f"PDF record did not return binary data: {store_id}/{key}"
+            )
+
+        text, page_texts = extract_pdf_text(record)
+        if not text:
+            raise ValueError(
+                f"PDF record {key} contains no extractable text. "
+                "This MVP supports text-based PDFs; scanned PDFs require OCR."
+            )
+
+        source = f"{store_id}/{key}"
+        quote = parse_pdf_quote(text, source, index, page_texts)
+        extraction.append({
+            "source": source,
+            "supplier": quote["supplier"],
+            "pages_text_chars": len(text),
+            "items_detected": len(quote["items"]),
+            "commercial_terms_detected": len(quote.get("commercial_terms") or {}),
+            "warnings": quote.pop("_extraction_warnings"),
+        })
+        quotes.append(quote)
+
+    return quotes, extraction
+
+
 async def main():
     async with Actor:
         raw = await Actor.get_input() or {}
 
         extraction = []
-        if raw.get("quote_pdfs"):
+        if raw.get("quote_stores"):
+            quotes, extraction = await parse_pdf_kvs_sources(raw["quote_stores"])
+        elif raw.get("quote_pdfs"):
+            # Backward-compatible support for direct file-upload URLs.
             quotes, extraction = await parse_pdf_sources(raw["quote_pdfs"])
         else:
             quotes = raw.get("quotes")
 
         if not isinstance(quotes, list) or len(quotes) < 2:
             raise ValueError(
-                "Input must contain either 'quote_pdfs' with at least two PDFs "
+                "Input must contain either 'quote_stores' with at least two PDF records "
                 "or a 'quotes' array with at least two structured quotes."
             )
 
