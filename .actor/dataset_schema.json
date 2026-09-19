@@ -21,7 +21,7 @@
       "status": {"type": "string", "title": "Status"},
       "review_required": {"type": "boolean", "title": "Review required"},
       "input_summary": {"type": "object", "title": "Input summary"},
-      "extraction": {"type": "object", "title": "Extraction summary"},
+      "extraction": {"type": "array", "title": "Extraction summary"},
       "commercial_terms": {"type": "object", "title": "Commercial terms"},
       "evidence": {"type": "object", "title": "Source evidence"},
       "comparison_note": {"type": "string", "title": "Comparison note"}
