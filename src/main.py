@@ -945,9 +945,9 @@ async def parse_pdf_kvs_sources(store_ids):
             continue
 
         store = Actor.apify_client.key_value_store(store_id)
-        keys = await store.iterate_keys(limit=1000)
+        keys = store.iterate_keys(limit=1000)
 
-        for metadata in keys:
+        async for metadata in keys:
             key = getattr(metadata, "key", None)
             content_type = getattr(metadata, "content_type", None)
             if isinstance(metadata, dict):
