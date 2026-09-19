@@ -1,11 +1,25 @@
 # QuoteCheck
 
-**Supplier quotes → PDF extraction → normalized comparison → exceptions → JSON**
+**Supplier quotes → extraction → normalization → comparison → exceptions → JSON**
 
-QuoteCheck is an Apify Actor for the boring part of procurement: comparing supplier quotes that describe the same items differently.
+QuoteCheck is an Apify Actor that compares supplier quotes and turns messy quote data into a structured, machine-readable comparison.
+
+It supports two input modes:
+
+1. **PDF quotes** - upload text-based supplier quote PDFs.
+2. **Structured JSON** - send already-extracted quote data directly for API and AI-agent workflows.
+
+QuoteCheck detects differences in:
+
+- prices
+- quantities
+- missing items
+- supplier totals
+- commercial terms
+
+It can also calculate **like-for-like normalized totals** when quoted quantities differ, and flags comparisons that require human review.
 
 ## MVP
-
 QuoteCheck accepts two input modes:
 
 1. **PDF quotes**: upload 2–10 text-based supplier quote PDFs.
