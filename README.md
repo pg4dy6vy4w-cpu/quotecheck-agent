@@ -1,98 +1,86 @@
-# QuoteCheck
+# Supplier Quote Comparison: PDF & JSON | QuoteCheck
 
-**Supplier quotes → extraction → normalization → comparison → exceptions → JSON**
+Compare supplier quotes and return structured price, quantity and exception data for purchasing workflows and AI agents.
 
-QuoteCheck is an Apify Actor that compares supplier quotes and turns messy quote data into a structured, machine-readable comparison.
+## Try a comparison
 
-It supports two input modes:
-
-1. **PDF quotes** - upload text-based supplier quote PDFs.
-2. **Structured JSON** - send already-extracted quote data directly for API and AI-agent workflows.
-
-QuoteCheck detects differences in:
-
-- prices
-- quantities
-- missing items
-- supplier totals
-- commercial terms
-
-It can also calculate **like-for-like normalized totals** when quoted quantities differ, and flags comparisons that require human review.
-
-
-## For AI agents
-
-Use QuoteCheck when a workflow needs to **compare supplier quotes, vendor quotes, RFQs, procurement quotes, purchase quotes, or quotation PDFs** and return a deterministic, structured comparison.
-
-Typical agent tasks include:
-
-- compare two or more supplier quotes
-- reconcile different product descriptions or SKUs
-- detect missing items, price differences, and quantity mismatches
-- calculate like-for-like normalized totals
-- identify comparisons that require human review
-- return machine-readable JSON for the next step in an automation
-
-QuoteCheck is designed to be discovered and called as a small business-operation tool through the **Apify MCP server, API, or other agent workflows**. Agents can inspect the Actor's input and output schemas before running it.
-
-**Discovery terms:** supplier quote comparison, vendor quote comparison, RFQ comparison, procurement quote comparison, purchase quote reconciliation, PDF quote comparison, supplier price comparison.
-
-## MVP
-QuoteCheck accepts two input modes:
-
-1. **PDF quotes**: upload 2–10 text-based supplier quote PDFs.
-2. **Structured JSON**: send normalized quotes directly for API/agent workflows.
-
-For PDF input, the Actor extracts text, detects common quote line-item rows, normalizes quantities and prices, matches equivalent items across suppliers, calculates totals, and returns machine-readable JSON.
-
-### PDF flow
-
-`PDF Quote A + PDF Quote B → extract → normalize → match → compare → JSON`
-
-The current MVP supports **text-based PDFs**. Scanned/image-only PDFs are detected and reported as requiring OCR rather than silently producing bad data.
-
-## Output
-
-Returns:
-
-- matched item groups
-- supplier-level quantities and prices
-- missing items/suppliers
-- quantity differences
-- price differences
-- calculated supplier totals
-- lowest comparable total
-- extraction warnings
-- review_required flag
-- extraction metadata
-
-## Structured JSON example
+Use structured JSON for a first run. Leave **Supplier quote file stores** empty, then use the prefilled **Structured supplier quotes** field. When calling the API, send the complete object below.
 
 ```json
 {
   "quotes": [
     {
       "supplier": "Supplier A",
+      "currency": "GBP",
       "items": [
-        {"description": "Dell Latitude 7450", "quantity": 10, "unit_price": 1150}
+        {
+          "description": "Dell Latitude 7450",
+          "quantity": 10,
+          "unit_price": 1150
+        }
       ]
     },
     {
       "supplier": "Supplier B",
+      "currency": "GBP",
       "items": [
-        {"description": "Latitude 7450 Laptop", "quantity": 10, "unit_price": 1095}
+        {
+          "description": "Dell Latitude 7450",
+          "quantity": 10,
+          "unit_price": 1095
+        }
       ]
     }
   ]
 }
 ```
 
-## Design principle
+The sample compares ten identical laptops in GBP. Supplier A totals £11,500; Supplier B totals £10,950, a £550 difference.
 
-QuoteCheck performs one business operation and returns predictable JSON that another automation or AI agent can consume. It does not scrape websites or generate a narrative report.
+Expected result excerpt:
 
-## Limitations
+```json
+{
+  "status": "comparable",
+  "review_required": false,
+  "supplier_totals": {
+    "Supplier A": 11500.0,
+    "Supplier B": 10950.0
+  },
+  "totals_comparable": true,
+  "lowest_total_supplier": "Supplier B"
+}
+```
 
-- PDF extraction relies on text embedded in the PDF.
-- Scanned PDFs require an OCR layer, which is the next logical upgrade.
-- Table layouts vary, so extraction warnings are surfaced and `review_required` is set when the result needs human checking.
+The full result also includes matched items, price differences, decision flags and other comparison fields. The example input and full expected output are in `examples/input.json` and `examples/output.json` in the source repository. This example was verified locally; it is not a claim of a live customer run.
+
+## Compare PDF quotes
+
+Store at least two text-based quote PDFs in Apify Key-Value Stores and select those stores in **Supplier quote file stores**. This mode takes priority over structured JSON when both are supplied.
+
+QuoteCheck extracts embedded text and attempts to identify line items and commercial terms. Scanned PDFs without text are rejected and require OCR before use. Layout support is limited; inspect extraction results before relying on a new document layout.
+
+## What the result contains
+
+- Matched items and suppliers missing from each group.
+- Unit-price and quantity differences.
+- Supplier totals and a lowest-total supplier when comparison checks pass.
+- Like-for-like estimates for differing quantities when sufficient data exists.
+- Commercial-term differences and validation warnings.
+- `review_required` and `decision_flags` for downstream routing.
+
+## Input and interpretation
+
+Use distinct supplier names, positive quantities and finite, non-negative unit prices. Include an explicit `currency` such as `GBP`, `EUR` or `USD` for every structured quote. Currency conversion is not performed. Numeric-only inputs without currency assume a common currency and disclose that assumption.
+
+Totals that differ from the item arithmetic require review, including legitimate adjustments for tax, shipping or discounts. Resolve warnings before choosing a supplier. `review_required: false` means the implemented checks passed; it does not guarantee complete PDF extraction or commercial equivalence.
+
+Quantity normalization applies each quoted unit price to the largest quoted quantity for that item. It is an estimate, not a binding supplier offer or a volume-discount calculation.
+
+## API and AI-agent workflows
+
+Input: supplier quotes as JSON or text-based PDFs in Apify storage.
+
+Output: structured JSON in the default dataset and the `OUTPUT` key-value record.
+
+Use this operation in supplier quote comparison, RFQ comparison, procurement automation and purchasing workflows. Eligible Actors can be accessed through Apify's existing MCP server; clients must configure their own Apify access. QuoteCheck does not need a separate MCP server.

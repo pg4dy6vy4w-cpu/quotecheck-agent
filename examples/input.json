@@ -1,0 +1,26 @@
+{
+  "quotes": [
+    {
+      "supplier": "Supplier A",
+      "currency": "GBP",
+      "items": [
+        {
+          "description": "Dell Latitude 7450",
+          "quantity": 10,
+          "unit_price": 1150
+        }
+      ]
+    },
+    {
+      "supplier": "Supplier B",
+      "currency": "GBP",
+      "items": [
+        {
+          "description": "Dell Latitude 7450",
+          "quantity": 10,
+          "unit_price": 1095
+        }
+      ]
+    }
+  ]
+}

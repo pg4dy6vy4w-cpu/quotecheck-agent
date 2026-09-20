@@ -1,11 +1,12 @@
 {
   "actorSpecification": 1,
   "name": "quotecheck-mvp",
-  "title": "QuoteCheck MVP",
+  "title": "Supplier Quote Comparison \u2014 PDF & JSON | QuoteCheck",
   "version": "1.0",
   "input": "./input_schema.json",
   "storages": {
     "dataset": "./dataset_schema.json"
   },
-  "output": "./output_schema.json"
+  "output": "./output_schema.json",
+  "description": "Compare supplier quote PDFs or JSON. Check prices, quantities, missing items and totals, and return structured results with review flags."
 }

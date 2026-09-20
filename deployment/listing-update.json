@@ -1,0 +1,11 @@
+{
+  "title": "Supplier Quote Comparison \u2014 PDF & JSON | QuoteCheck",
+  "description": "Compare supplier quote PDFs or JSON. Check prices, quantities, missing items and totals, and return structured results with review flags.",
+  "categories": [
+    "DEVELOPER_TOOLS"
+  ],
+  "exampleRunInput": {
+    "body": "{\"quotes\": [{\"supplier\": \"Supplier A\", \"currency\": \"GBP\", \"items\": [{\"description\": \"Dell Latitude 7450\", \"quantity\": 10, \"unit_price\": 1150}]}, {\"supplier\": \"Supplier B\", \"currency\": \"GBP\", \"items\": [{\"description\": \"Dell Latitude 7450\", \"quantity\": 10, \"unit_price\": 1095}]}]}",
+    "contentType": "application/json; charset=utf-8"
+  }
+}

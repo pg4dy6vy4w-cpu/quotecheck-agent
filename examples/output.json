@@ -1,0 +1,89 @@
+{
+  "suppliers": [
+    "Supplier A",
+    "Supplier B"
+  ],
+  "supplier_totals": {
+    "Supplier A": 11500.0,
+    "Supplier B": 10950.0
+  },
+  "totals_comparable": true,
+  "lowest_total_supplier": "Supplier B",
+  "matched_items": [
+    {
+      "canonical_item": "Dell Latitude 7450",
+      "suppliers": [
+        {
+          "supplier": "Supplier A",
+          "description": "Dell Latitude 7450",
+          "sku": null,
+          "quantity": 10.0,
+          "unit_price": 1150.0,
+          "total": 11500.0,
+          "quote_index": 0,
+          "item_index": 0
+        },
+        {
+          "supplier": "Supplier B",
+          "description": "Dell Latitude 7450",
+          "sku": null,
+          "quantity": 10.0,
+          "unit_price": 1095.0,
+          "total": 10950.0,
+          "quote_index": 1,
+          "item_index": 0
+        }
+      ],
+      "missing_suppliers": [],
+      "warnings": [
+        {
+          "type": "price_difference",
+          "values": {
+            "Supplier A": 1150.0,
+            "Supplier B": 1095.0
+          }
+        }
+      ],
+      "match_confidence": 1.0
+    }
+  ],
+  "unmatched_items": [],
+  "price_differences": [
+    {
+      "canonical_item": "Dell Latitude 7450",
+      "values": {
+        "Supplier A": 1150.0,
+        "Supplier B": 1095.0
+      }
+    }
+  ],
+  "quantity_differences": [],
+  "commercial_terms_differences": [],
+  "warnings": [],
+  "comparison_note": "Supplier totals are directly comparable because quoted quantities match.",
+  "normalized_supplier_totals": {
+    "Supplier A": 11500.0,
+    "Supplier B": 10950.0
+  },
+  "lowest_normalized_total_supplier": "Supplier B",
+  "normalized_savings": 550.0,
+  "decision_flags": [
+    {
+      "type": "price_variance",
+      "severity": "info",
+      "message": "At least one matched item has different unit prices."
+    }
+  ],
+  "status": "comparable",
+  "review_required": false,
+  "input_summary": {
+    "quote_count": 2,
+    "item_count": 2,
+    "input_mode": "json"
+  },
+  "commercial_terms": {
+    "Supplier A": {},
+    "Supplier B": {}
+  },
+  "evidence": {}
+}

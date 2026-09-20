@@ -23,70 +23,50 @@
       "editor": "json",
       "prefill": [
         {
-          "supplier": "Northstar Office Supplies",
+          "supplier": "Supplier A",
+          "currency": "GBP",
           "items": [
             {
               "description": "Dell Latitude 7450",
               "quantity": 10,
               "unit_price": 1150
-            },
-            {
-              "description": "USB-C Dock",
-              "quantity": 10,
-              "unit_price": 180
             }
-          ],
-          "total": 13300
+          ]
         },
         {
-          "supplier": "Westbridge Technology",
+          "supplier": "Supplier B",
+          "currency": "GBP",
           "items": [
             {
-              "description": "Latitude 7450 Laptop",
+              "description": "Dell Latitude 7450",
               "quantity": 10,
               "unit_price": 1095
-            },
-            {
-              "description": "USB C docking station",
-              "quantity": 8,
-              "unit_price": 195
             }
-          ],
-          "total": 12510
+          ]
         }
       ],
       "example": [
         {
           "supplier": "Supplier A",
+          "currency": "GBP",
           "items": [
             {
               "description": "Dell Latitude 7450",
               "quantity": 10,
               "unit_price": 1150
-            },
-            {
-              "description": "USB-C Dock",
-              "quantity": 10,
-              "unit_price": 180
             }
-          ],
-          "total": 13300
+          ]
         },
         {
           "supplier": "Supplier B",
+          "currency": "GBP",
           "items": [
             {
-              "description": "Latitude 7450 Laptop",
+              "description": "Dell Latitude 7450",
               "quantity": 10,
               "unit_price": 1095
-            },
-            {
-              "description": "USB C docking station",
-              "quantity": 8,
-              "unit_price": 195
             }
-          ],
-          "total": 12510
+          ]
         }
       ]
     }
